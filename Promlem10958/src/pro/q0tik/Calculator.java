@@ -18,43 +18,80 @@ public class Calculator {
 	
 	File numbers = new File(System.getProperty("user.dir") + "/numbers.txt");
 	File order = new File(System.getProperty("user.dir") + "/order.txt");
-	File answers = new File(System.getProperty("user.dir") + "/answers.txt");
+	volatile File answers = new File(System.getProperty("user.dir") + "/answers.txt");
 	
 	BigInteger answ = new BigInteger("10958");
+	int threadsNum = 100;
 	
-	public Calculator() throws IOException {
+	public Calculator() throws IOException, InterruptedException {
 		//fillList();
 		//fillOrder();
-		answers.createNewFile();
 		
-		brN = new BufferedReader(new FileReader(numbers));
-		bw = new BufferedWriter(new FileWriter(answers, true));
-		
-		String exp;
-		while ((exp = brN.readLine()) != null) {
-			brO = new BufferedReader(new FileReader(order));
-			String ord;
-			while ((ord = brO.readLine()) != null) {
-				if (calculate(exp, ord).equals(answ)) {
-					bw.append(exp + "\n" + ord + "\n\n");
-				}
-			}
+		//startCalc(852129, 852130);
+		for (int i = 0; i < threadsNum; i++) {
+			int k = i;
+			Thread thread = new Thread(){
+				public void run(){
+			    	try {
+						startCalc(k * 1680000 / threadsNum, (k+1) * 1680000 / threadsNum);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+			    }
+			};
+
+			thread.start();
 		}
-		bw.close();
 		
+		//startCalc(1*1000000, (1+1)*1000000);
+//		BufferedReader brN = new BufferedReader(new FileReader(numbers));
+//		System.out.println(brN.lines().count());
+		  
 //		if (calculate("1*2\u00003+4*5*6\u00007+8*9", "67812345").equals(answ)) {
-//			bw.append("lolkek\n");
+//			
 //		}
-		brN.close();
-		brO.close();
+		
+		
 	}
 	
 	//TODO: store in file instead of RAM
 	//public static LinkedList<String> listOfExpressions = new LinkedList<String>();
 	
 	BufferedWriter bw;
-	BufferedReader brN;
-	BufferedReader brO;
+	//BufferedReader brN;
+	//BufferedReader brO;
+	
+	private void startCalc(int from, int to) throws IOException {
+		answers.createNewFile();	
+		BufferedReader brN = new BufferedReader(new FileReader(numbers));
+		
+		for (int i = 0; i < from; i++) {
+			brN.readLine();
+		}
+		
+		String exp;
+		int i = from;
+		
+		outer:
+		while ((exp = brN.readLine()) != null) {
+			if (i == to) break outer;
+			System.out.println(exp);
+			BufferedReader brO = new BufferedReader(new FileReader(order));
+			String ord;
+			while ((ord = brO.readLine()) != null) {
+				if (calculate(exp, ord).equals(answ)) {
+					bw = new BufferedWriter(new FileWriter(answers, true));
+					bw.append(exp + "\n" + ord + "\n\n");
+					bw.close();
+					System.out.println("URA");
+				}
+			}
+			i++;
+			brO.close();
+		}
+		brN.close();
+	}
 	
 	public BigInteger calculate(String expression, String order) {
 		String answ = expression;
@@ -89,8 +126,8 @@ public class Calculator {
 			String opp = ops.get(o);
 			
 			if (opp.equals("^")) {
-				if (num.get(o).compareTo(new BigInteger("999")) > 0
-					&& num.get(o + 1).compareTo(new BigInteger("999")) > 0) {
+				if (num.get(o).compareTo(new BigInteger("99")) > 0
+					&& num.get(o + 1).compareTo(new BigInteger("99")) > 0) {
 						num.set(o, pow(num.get(o), num.get(o + 1)));
 				} else {
 					return BigInteger.ZERO;
@@ -132,7 +169,7 @@ public class Calculator {
 			
 		}
 		
-		System.out.println(num.get(0));
+		//System.out.println(num.get(0));
 		return num.get(0);
 	}
 	
